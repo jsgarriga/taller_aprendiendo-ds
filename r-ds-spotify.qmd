@@ -1,0 +1,205 @@
+---
+title: "Taller de alfabetización en Datos"
+---
+
+Análisis Exploratorio de Datos a una playlist de Spotify con R y tidyverse. Posteriormente, le sigue una fase de Machine Learning en la cual vamos a clasificar canciones por géneros musicales. 
+
+# NOTA: EN REALIDAD, NO SON MIS LIKED SONGS SINO LAS DEL JUJITA!!!!!
+
+******
+
+# I. INSTALACIÓN E IMPORTACIÓN DE LIBRERÍAS Y PAQUETES, CONEXIÓN A LA API, OBTENCIÓN DE CREDENCIALES Y DATA WRANGLING
+
+## Paso 1: Conexión a la API de Spotify
+
+Primero, necesitarás una clave de API (API key) para conectarte a la API de Spotify. Si ya tienes una, genial. Si no, debes seguir los siguientes pasos:
+
+- Ve a la página de desarrolladores de Spotify (<https://developer.spotify.com/>) y crea una cuenta si aún no tienes una.
+- Después de iniciar sesión, ve a la página de Dashboard y crea una nueva aplicación.
+- Una vez creada la aplicación, podrás obtener la clave de API (Client ID) y el secreto de la API (Client Secret).
+
+### EXTRA: Sobre _"Redirect URI"_
+
+La "Redirect URI" (URI de redireccionamiento) es una URL a la que Spotify redirigirá al usuario después de que haya autorizado tu aplicación. En este caso, como estamos trabajando localmente, puedes proporcionar una URI de redireccionamiento ficticia. Aquí tienes una opción comúnmente utilizada para este propósito: <http://localhost:8888/callback>
+
+Simplemente copia y pega esa URI de redireccionamiento en el campo correspondiente al crear tu nueva aplicación en el Dashboard de Spotify. Recuerda que esta URI de redireccionamiento ficticia solo se utiliza para propósitos locales y no tiene ningún efecto real en el flujo de autenticación.
+
+## Paso 2: Instalación de los paquetes necesarios
+
+```{r}
+paquetes <- c("httr", "jsonlite", "tidyverse", "tidymodels")
+install.packages(paquetes)
+```
+
+### Paso 2.1: Carga de librerías
+
+```{r}
+library(httr) # Nos sirve para conectarnos a la API
+library(jsonlite)
+library(tidyverse) # Nos sirve para manipular datos
+library(tidymodels) # Nos sirve para construir modelos de ML
+```
+
+## Paso 3: Autenticación con la API de Spotify
+
+```{r}
+# Establecer la clave de API y el secreto de la API
+# (descomenta las siguientes dos líneas:)
+# client_id <- "TU_CLIENT_ID"
+# client_secret <- "TU_CLIENT_SECRET"
+
+# O bien, importamos las claves desde otro archivo privado:
+source("./scripts/config.R")
+```
+
+> Si cargamos nuestras credenciales en un archivo aparte nos aseguramos de NO compartirlos con otras personas, considerando que son PRIVADOS. Podríamos compartirlos, pero el uso del servicio tiene un límite mensual. La ruta del archivo la podemos añadir al `.gitignore` para que al hacer el push a nuestro repositorio de GitHub este no se suba.
+
+```{r}
+# Acá usamos`library(httr)`
+
+redirect_uri <- "http://localhost:8888/callback"
+scope <- "playlist-read-private"
+
+# Construir la URL de autorización
+auth_url <- sprintf("https://accounts.spotify.com/authorize?client_id=%s&response_type=code&redirect_uri=%s&scope=%s",
+                    client_id, URLencode(redirect_uri), URLencode(scope))
+
+# Imprimir la URL de autorización en la consola
+print(auth_url)
+```
+
+Copiamos la URL impresa y la pegamos en nuestro navegador para autorizar la aplicación. Una vez autorizada, obtendremos un código de autorización que deberemos usar en el siguiente paso.
+
+```{r}
+# Intercambiar el código de autorización por un token de acceso
+auth_code <- "AQCBN1KW896-M349kEnUKPWDCGCjabCwSpBvWaeI_gSkzqA-PAqL00y2f0n7GcvojLem2endvxtXsD81fR1F3o3-Ik1HuA6ZvFsWqBjfwgEJErGM8bzZE2ylwf8g6ekz75ppfXNCCO0DQLQc5YhN39lQEjPFD_RGJ9K6yPCrJP2H8MGxoG5NDXcMQh9acJAWoNgWjwOPx_kZ" # Este es un ejemplo. Cambia en cada autorización
+
+token_url <- "https://accounts.spotify.com/api/token"
+response1 <- POST(token_url,
+                 body = list(
+                   grant_type = "authorization_code",
+                   code = auth_code,
+                   redirect_uri = redirect_uri
+                 ),
+                 authenticate(client_id, client_secret),
+                 encode = "form")
+
+# Obtener el token de acceso
+access_token <- content(response1)$access_token
+```
+
+Utiliza el token de acceso para realizar las solicitudes a la API de Spotify.
+
+## Paso 4: Obtención de datos de la playlist de Spotify
+
+```{r}
+# Nuevamente, seguimos usando `library(httr)`
+
+# Obtener la información de todas las playlists del usuario
+url0 <- "https://api.spotify.com/v1/me/playlists"
+response0 <- GET(url0, add_headers("Authorization" = paste("Bearer", access_token, sep = " ")))
+playlists <- content(response0, as = "parsed")$items
+
+# En mi caso, la playlist "Tus me gusta" es:
+playlists[[2]]
+
+# Lo identifiqué considerando que la playlist no tiene un nombre (name) ni una descripción (description) especificados
+```
+
+Pasamos los datos de ID para extraer las canciones:
+
+```{r}
+# Identificador de la playlist "Tus me gusta"
+playlist_id <- "7BsNWZgrRFjGIT6cQdIOCe"
+
+# Verificar si el identificador es válido
+if (is.null(playlist_id)) {
+  print("No se encontró la playlist")
+} else {
+  print(playlist_id)
+}
+```
+
+Obtenemos algunos datos de la playlist: 
+
+```{r}
+# URL de la API de Spotify para obtener los detalles de la playlist
+url <- sprintf("https://api.spotify.com/v1/playlists/%s", playlist_id)
+
+# Realizar la solicitud GET a la API de Spotify con el token de acceso
+response <- GET(url, add_headers("Authorization" = paste("Bearer", access_token, sep = " ")))
+
+# Convertir la respuesta en un objeto JSON
+#playlist_data <- content(response, as = "parsed")$items
+playlist_data <- content(response, as = "parsed") # a ver
+
+# Obtener los datos de la playlist
+playlist_name <- playlist_data$name
+playlist_description <- playlist_data$description
+playlist_tracks <- playlist_data$tracks$total
+
+# Imprimir los datos de la playlist
+print(paste("Nombre de la playlist:", playlist_name))
+print(paste("Descripción de la playlist:", playlist_description))
+print(paste("Cantidad de canciones en la playlist:", playlist_tracks))
+```
+
+## Paso 4.1: Data wrangling
+
+Guardamos la playlist en un archivo .csv:
+
+```{r}
+# Extraer los datos relevantes de las canciones
+song_data <- data.frame(
+  track_name = sapply(playlist_data$tracks$items, function(x) x$track$name),
+  artist = sapply(playlist_data$tracks$items, function(x) x$track$artists[[1]]$name),
+  album = sapply(playlist_data$tracks$items, function(x) x$track$album$name),
+  release_date = sapply(playlist_data$tracks$items, function(x) x$track$album$release_date),
+  duration_ms = sapply(playlist_data$tracks$items, function(x) x$track$duration_ms),
+  stringsAsFactors = FALSE
+)
+
+# Crear un directorio "datos" si no existe
+if (!dir.exists("datos")) {
+  dir.create("datos")
+}
+
+# Guardar los datos de la playlist en un archivo CSV
+playlist_file <- file.path("datos", "juja.csv")
+write.csv(song_data, file = playlist_file, row.names = FALSE)
+```
+
+Cargamos la playlist en .csv:
+
+```{r}
+# Cargar el archivo CSV con read_csv
+juja <- read_csv("./datos/juja.csv")
+
+# Mostrar una vista previa de los datos
+head(juja)
+view(juja)
+```
+
+# II. ANÁLISIS EXPLORATORIO DE DATOS (AED) CON TIDYVERSE
+
+## Paso 5: Análisis Exploratorio de Datos
+
+```{r}
+# Visualización de la cantidad de canciones por artista
+ggplot(data = juja, aes(x = artist)) +
+  geom_bar(fill = "steelblue") +
+  labs(x = "Artista", y = "Cantidad de canciones", title = "Cantidad de canciones por artista") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Análisis de la duración promedio de las canciones
+average_duration <- mean(juja$duration_ms / 1000)
+average_minutes <- floor(average_duration / 60)
+average_seconds <- round(average_duration %% 60)
+print(paste("Duración promedio de las canciones:", average_minutes, "minutos", average_seconds, "segundos"))
+
+```
+
+# III. MACHINE LEARNING CON TIDYMODELS
+
+
+
