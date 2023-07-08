@@ -1,0 +1,26 @@
+---
+title: "Taller de alfabetización en Datos"
+subtitle: "III. MACHINE LEARNING CON TIDYMODELS"
+---
+
+Obtención y manipulación de datos sobre una playlist de Spotify con R y tidyverse. Análisis Exploratorio de Datos. Posteriormente, le sigue una fase de Machine Learning en la cual vamos a clasificar canciones por géneros musicales. Finalmente, generaremos un reporte.
+
+******
+
+> Continuación del taller _"II. ANÁLISIS EXPLORATORIO DE DATOS (AED) CON TIDYVERSE"_.
+
+# III. MACHINE LEARNING CON TIDYMODELS
+
+Cargamos las librerías necesarias:
+
+```{r}
+library(httr) # Nos sirve para conectarnos a la API
+library(jsonlite)
+library(tidyverse) # Nos sirve para manipular datos
+library(tidymodels) # Nos sirve para construir modelos de ML
+```
+
+# IN PROGRESS!!!
+
+> El próximo taller es _"IV. GENERACIÓN DE REPORTES CON QUARTO"_.
+

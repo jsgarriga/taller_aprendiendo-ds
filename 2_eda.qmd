@@ -1,0 +1,54 @@
+---
+title: "Taller de alfabetización en Datos"
+subtitle: "II. ANÁLISIS EXPLORATORIO DE DATOS (AED) CON TIDYVERSE"
+---
+
+Obtención y manipulación de datos sobre una playlist de Spotify con R y tidyverse. Análisis Exploratorio de Datos. Posteriormente, le sigue una fase de Machine Learning en la cual vamos a clasificar canciones por géneros musicales. Finalmente, generaremos un reporte.
+
+******
+
+> Continuación del taller _"I. INSTALACIÓN E IMPORTACIÓN DE LIBRERÍAS Y PAQUETES, CONEXIÓN A LA API, OBTENCIÓN DE CREDENCIALES Y DATA WRANGLING"_.
+
+## Paso 5: Análisis Exploratorio de Datos
+
+Cargamos las librerías necesarias:
+
+```{r}
+library(httr) # Nos sirve para conectarnos a la API
+library(jsonlite)
+library(tidyverse) # Nos sirve para manipular datos
+library(tidymodels) # Nos sirve para construir modelos de ML
+```
+
+Cargamos la playlist que guardamos en el notebook anterior en .csv:
+
+```{r}
+# Cargar el archivo CSV con read_csv
+juja <- read_csv("./datos/juja.csv")
+
+# Mostrar una vista previa de los datos
+head(juja)
+view(juja)
+```
+
+Algunas visualizaciones y análisis exploratorios:
+
+```{r}
+# Visualización de la cantidad de canciones por artista
+ggplot(data = juja, aes(x = artist)) +
+  geom_bar(fill = "steelblue") +
+  labs(x = "Artista", y = "Cantidad de canciones", title = "Cantidad de canciones por artista") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Análisis de la duración promedio de las canciones
+average_duration <- mean(juja$duration_ms / 1000)
+average_minutes <- floor(average_duration / 60)
+average_seconds <- round(average_duration %% 60)
+print(paste("Duración promedio de las canciones:", average_minutes, "minutos", average_seconds, "segundos"))
+
+```
+
+# IN PROGRESS!!!
+
+> El próximo taller es _"III. MACHINE LEARNING CON TIDYMODELS"_.
+

@@ -1,14 +1,11 @@
 ---
 title: "Taller de alfabetización en Datos"
+subtitle: "I. INSTALACIÓN E IMPORTACIÓN DE LIBRERÍAS Y PAQUETES, CONEXIÓN A LA API, OBTENCIÓN DE CREDENCIALES Y DATA WRANGLING"
 ---
 
-Análisis Exploratorio de Datos a una playlist de Spotify con R y tidyverse. Posteriormente, le sigue una fase de Machine Learning en la cual vamos a clasificar canciones por géneros musicales. 
-
-# NOTA: EN REALIDAD, NO SON MIS LIKED SONGS SINO LAS DEL JUJITA!!!!!
+Obtención y manipulación de datos sobre una playlist de Spotify con R y tidyverse. Análisis Exploratorio de Datos. Posteriormente, le sigue una fase de Machine Learning en la cual vamos a clasificar canciones por géneros musicales. Finalmente, generaremos un reporte.
 
 ******
-
-# I. INSTALACIÓN E IMPORTACIÓN DE LIBRERÍAS Y PAQUETES, CONEXIÓN A LA API, OBTENCIÓN DE CREDENCIALES Y DATA WRANGLING
 
 ## Paso 1: Conexión a la API de Spotify
 
@@ -95,12 +92,12 @@ Utiliza el token de acceso para realizar las solicitudes a la API de Spotify.
 ```{r}
 # Nuevamente, seguimos usando `library(httr)`
 
-# Obtener la información de todas las playlists del usuario
+# Obtener la información de todas las playlists de user
 url0 <- "https://api.spotify.com/v1/me/playlists"
 response0 <- GET(url0, add_headers("Authorization" = paste("Bearer", access_token, sep = " ")))
 playlists <- content(response0, as = "parsed")$items
 
-# En mi caso, la playlist "Tus me gusta" es:
+# En mi caso, esta es la playlist que me interesa:
 playlists[[2]]
 
 # Lo identifiqué considerando que la playlist no tiene un nombre (name) ni una descripción (description) especificados
@@ -109,7 +106,7 @@ playlists[[2]]
 Pasamos los datos de ID para extraer las canciones:
 
 ```{r}
-# Identificador de la playlist "Tus me gusta"
+# Identificador de la playlist
 playlist_id <- "7BsNWZgrRFjGIT6cQdIOCe"
 
 # Verificar si el identificador es válido
@@ -169,7 +166,7 @@ playlist_file <- file.path("datos", "juja.csv")
 write.csv(song_data, file = playlist_file, row.names = FALSE)
 ```
 
-Cargamos la playlist en .csv:
+Verificamos que los datos se hallan guardado con éxito. Para ello, cargamos la playlist en .csv y la visualizamos:
 
 ```{r}
 # Cargar el archivo CSV con read_csv
@@ -180,26 +177,5 @@ head(juja)
 view(juja)
 ```
 
-# II. ANÁLISIS EXPLORATORIO DE DATOS (AED) CON TIDYVERSE
-
-## Paso 5: Análisis Exploratorio de Datos
-
-```{r}
-# Visualización de la cantidad de canciones por artista
-ggplot(data = juja, aes(x = artist)) +
-  geom_bar(fill = "steelblue") +
-  labs(x = "Artista", y = "Cantidad de canciones", title = "Cantidad de canciones por artista") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-# Análisis de la duración promedio de las canciones
-average_duration <- mean(juja$duration_ms / 1000)
-average_minutes <- floor(average_duration / 60)
-average_seconds <- round(average_duration %% 60)
-print(paste("Duración promedio de las canciones:", average_minutes, "minutos", average_seconds, "segundos"))
-
-```
-
-# III. MACHINE LEARNING CON TIDYMODELS
-
-
+> El próximo taller es _"II. ANÁLISIS EXPLORATORIO DE DATOS (AED) CON TIDYVERSE"_.
 
