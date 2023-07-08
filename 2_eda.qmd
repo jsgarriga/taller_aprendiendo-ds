@@ -1,6 +1,6 @@
 ---
 title: "Taller de alfabetización en Datos"
-subtitle: "II. ANÁLISIS EXPLORATORIO DE DATOS (AED) CON TIDYVERSE"
+subtitle: "II. ANÁLISIS EXPLORATORIO DE DATOS (EDA) CON TIDYVERSE"
 ---
 
 Obtención y manipulación de datos sobre una playlist de Spotify con R y tidyverse. Análisis Exploratorio de Datos. Posteriormente, le sigue una fase de Machine Learning en la cual vamos a clasificar canciones por géneros musicales. Finalmente, generaremos un reporte.
@@ -31,7 +31,34 @@ head(juja)
 view(juja)
 ```
 
+Creamos una nueva columna para transformar la duración de ms a minutos:
+
+```{r}
+juja <- juja %>%
+  # acá usamos el paquete `lubridate`
+  mutate(duration_min = seconds_to_period(duration_ms/1000))
+
+# Visualizamos
+head(juja)
+```
+
+
+### 1. Preguntas
+
+> "Tu objetivo durante el EDA es desarrollar un entendimiento de tus datos. La manera más fácil de lograrlo es usar preguntas como herramientas para guiar tu investigación. Cuando formulas una pregunta, esta orienta tu atención en una parte específica de tu conjunto de datos y te ayuda a decidir qué gráficos, modelos o transformaciones son necesarios".
+
+- ¿Con qué tipo de variables estoy trabajando?
+  * Cuantitativos
+  * Cualitativos
+  * (...)
+- ¿Qué tipo de variación existe dentro de cada una de mis variables?
+  * Distribuciones
+  * 
+- ¿Qué tipo de covariación ocurre entre mis diferentes variables?
+
 Algunas visualizaciones y análisis exploratorios:
+
+# IN PROGRESS!!!
 
 ```{r}
 # Visualización de la cantidad de canciones por artista
@@ -45,10 +72,35 @@ average_duration <- mean(juja$duration_ms / 1000)
 average_minutes <- floor(average_duration / 60)
 average_seconds <- round(average_duration %% 60)
 print(paste("Duración promedio de las canciones:", average_minutes, "minutos", average_seconds, "segundos"))
-
 ```
 
-# IN PROGRESS!!!
+```{r}
+# Álbumes
+juja %>% 
+  count(album, sort = T) %>% 
+  print(n = 100)
+
+# Artistas
+juja %>% 
+  count(artist, sort = T)
+```
+
+```{r}
+# Artistas con más de una aparición
+artistas_mas_uno <- juja %>%
+  filter(artist %in% names(table(artist))[table(artist) > 1])
+
+unique(artistas_mas_uno$artist)
+
+artistas_mas_uno %>%
+  count(artist, sort = T)
+
+# Duración de sus canciones
+ggplot(artistas_mas_uno, aes(x = duration_min)) +
+  geom_histogram(binwidth = 1000) +
+#  labs(x = "Duration (ms)", y = "Frecuencia") +
+  ggtitle("Distribución de duración")
+```
 
 > El próximo taller es _"III. MACHINE LEARNING CON TIDYMODELS"_.
 
